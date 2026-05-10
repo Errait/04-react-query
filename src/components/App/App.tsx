@@ -1,8 +1,7 @@
-import { Toaster } from 'react-hot-toast';
-import { useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import { useEffect, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import './App.module.css';
-import css from '../ErrorMessage/ErrorMessage.module.css';
 
 import SearchBar from '../SearchBar/SearchBar';
 import { fetchMovies } from '../../services/movieService';
@@ -29,6 +28,17 @@ export default function App() {
   const movies = data?.results ?? [];
   const totalPages = data?.total_pages ?? 0;
 
+  useEffect(() => {
+    if (isSuccess && searchWord && movies.length === 0) {
+      toast.error('No movies found for your request.');
+    }
+  }, [isSuccess, movies.length, searchWord]);
+
+  const handleSearch = (newWord: string) => {
+    setSearchWord(newWord);
+    setCurrentPage(1);
+  };
+
   const handleSelectMovie = (movie: Movie) => {
     setSelectedMovie(movie);
   };
@@ -41,7 +51,7 @@ export default function App() {
     <>
       <Toaster position="top-center" reverseOrder={false} />
 
-      <SearchBar onSubmit={setSearchWord} />
+      <SearchBar onSubmit={handleSearch} />
 
       {isSuccess && totalPages > 1 && (
         <Pagination
@@ -55,10 +65,6 @@ export default function App() {
 
       {!isLoading && movies.length > 0 && (
         <MovieGrid onSelect={handleSelectMovie} movies={movies} />
-      )}
-
-      {!isLoading && !error && searchWord && movies.length === 0 && (
-        <p className={css.text}>No movies found for your request.</p>
       )}
 
       {isLoading && <Loader />}
