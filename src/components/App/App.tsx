@@ -1,6 +1,6 @@
 import toast, { Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import './App.module.css';
 
 import SearchBar from '../SearchBar/SearchBar';
@@ -18,21 +18,20 @@ export default function App() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const { data, error, isLoading, isSuccess } = useQuery({
+  const { data, isError, isFetching, isSuccess } = useQuery({
     queryKey: ['movies', searchWord, currentPage],
     queryFn: () => fetchMovies(searchWord, currentPage),
     enabled: searchWord.trim() !== '',
-    placeholderData: keepPreviousData,
   });
 
   const movies = data?.results ?? [];
   const totalPages = data?.total_pages ?? 0;
 
   useEffect(() => {
-    if (isSuccess && searchWord && movies.length === 0) {
+    if (isSuccess && !isFetching && searchWord && movies.length === 0) {
       toast.error('No movies found for your request.');
     }
-  }, [isSuccess, movies.length, searchWord]);
+  }, [isSuccess, isFetching, movies.length, searchWord]);
 
   const handleSearch = (newWord: string) => {
     setSearchWord(newWord);
@@ -61,13 +60,13 @@ export default function App() {
         />
       )}
 
-      {error && <ErrorMessage />}
+      {isError && <ErrorMessage />}
 
-      {!isLoading && movies.length > 0 && (
+      {isFetching && <Loader />}
+
+      {!isFetching && !isError && movies.length > 0 && (
         <MovieGrid onSelect={handleSelectMovie} movies={movies} />
       )}
-
-      {isLoading && <Loader />}
 
       {selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={closeModal} />
